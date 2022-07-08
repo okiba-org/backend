@@ -11,6 +11,9 @@ export default function BinRouter(db: Pool) {
 
     router.post("/paste", async (req: Request, res: Response) => {
         let body: string = req.body;
+        if (body == undefined || body == "") {
+            return res.status(400).json({ message: "Invalid body!" });
+        }
 
         const word: Word | undefined = await getAvailableWord(db);
 
@@ -21,8 +24,8 @@ export default function BinRouter(db: Pool) {
                 (err) => err
             );
 
-            setWordTaken(db, word.id);
-            console.log(word.id);
+            await setWordTaken(db, word.id);
+
             return res.status(200).json({
                 endpoint: word.val,
                 message: "Code pasted successfully!",

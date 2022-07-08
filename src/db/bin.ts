@@ -8,12 +8,7 @@ export const getAvailableWord = async (db: Pool): Promise<Word | undefined> => {
         .query(Query.getAvailableWord)
         .catch((err) => err);
 
-    if (data != undefined) {
-        let word = data.rows[0];
-        return word;
-    }
-
-    return undefined;
+    return data?.rows[0];
 };
 
 export const setWordTaken = async (db: Pool, id: number) => {
