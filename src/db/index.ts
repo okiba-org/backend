@@ -1,7 +1,8 @@
 import { logError, logSuccess, projectRoot } from "../utils";
 import fs from "fs";
 import path from "path";
-import { Client, QueryResult } from "pg";
+import { Client } from "pg";
+import fsp from "fs/promises";
 
 export const tableExists = async (db: Client): Promise<boolean> => {
     const result = await db
@@ -47,33 +48,22 @@ export const populateDB = async (db: Client) => {
         )
         .catch((err) => err);
 
-    fs.readFile(
-        filepath,
-        { encoding: "utf-8" },
-        async (err: Error | null, data: string) => {
-            if (err != null) {
-                logError(err.message);
-                throw err;
-            }
+    let data = await fsp.readFile(filepath, { encoding: "utf-8" });
 
-            let arr: Array<string> = data.split("\r\n");
+    let arr: string[] = data.split("\r\n");
 
-            // 1k entries per query
-            const chunkSize = 1000;
-            for (let i = 0; i < arr.length; i += chunkSize) {
-                const chunk: Array<string> = arr.slice(i, i + chunkSize);
+    // 1k entries per query
+    const chunkSize = 1000;
+    for (let i = 0; i < arr.length; i += chunkSize) {
+        const chunk: string[] = arr.slice(i, i + chunkSize);
 
-                const queryStr = {
-                    text: `INSERT INTO words (val) VALUES ${expand(
-                        chunk.length
-                    )}`,
-                    values: chunk,
-                };
+        const queryStr = {
+            text: `INSERT INTO words (val) VALUES ${expand(chunk.length)}`,
+            values: chunk,
+        };
 
-                await db.query(queryStr);
-            }
-        }
-    );
+        await db.query(queryStr);
+    }
 
     logSuccess("Successfully populated the database!");
 };

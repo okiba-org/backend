@@ -2,6 +2,7 @@ import chalk from "chalk";
 import { ErrorRequestHandler } from "express";
 import path from "path";
 import fs from "fs";
+import fsp from "fs/promises";
 
 // logs
 export const logError = (msg: string) => console.error(chalk.bold.red(msg));
@@ -16,10 +17,10 @@ export const errorHandler: ErrorRequestHandler = (err, _, res, __) => {
     return res.status(500).json({ message: "Internal server error!" });
 };
 
-export const createDataDir = () => {
+export const createDataDir = async () => {
     let dir = path.join(projectRoot, "data");
 
     if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
+        await fsp.mkdir(dir);
     }
 };

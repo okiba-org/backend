@@ -7,7 +7,7 @@ import { tableExists, populateDB } from "./db";
 
 const main = async () => {
     dotenv.config();
-    createDataDir();
+    await createDataDir();
 
     // init db
     const pool = new Pool();

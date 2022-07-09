@@ -3,6 +3,7 @@ import { Pool, QueryResult } from "pg";
 import fs from "fs";
 import path from "path";
 import { Word } from "../utils/types";
+import fsp from "fs/promises";
 import { projectRoot } from "../utils";
 import { getAvailableWord, setWordTaken } from "../db/bin";
 
@@ -18,10 +19,9 @@ export default function BinRouter(db: Pool) {
         const word: Word | undefined = await getAvailableWord(db);
 
         if (word != undefined) {
-            fs.writeFile(
+            await fsp.writeFile(
                 path.join(projectRoot, "data", word.val + ".txt"),
-                body,
-                (err) => err
+                body
             );
 
             await setWordTaken(db, word.id);
