@@ -18,7 +18,7 @@ export default function BinRouter(db: Pool) {
         const word: Word | undefined = await getAvailableWord(db);
 
         if (word != undefined) {
-            await fs.writeFile(
+            fs.writeFile(
                 path.join(projectRoot, "data", word.val + ".txt"),
                 body,
                 (err) => err

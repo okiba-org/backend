@@ -6,6 +6,7 @@ import fs from "fs";
 // logs
 export const logError = (msg: string) => console.error(chalk.bold.red(msg));
 export const logSuccess = (msg: string) => console.log(chalk.bold.green(msg));
+export const logWarning = (msg: string) => console.log(chalk.bold.yellow(msg));
 
 export const projectRoot = path.join(__dirname, "..", "..");
 
