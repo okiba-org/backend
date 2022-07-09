@@ -11,6 +11,11 @@ export const logWarning = (msg: string) => console.log(chalk.bold.yellow(msg));
 
 export const projectRoot = path.join(__dirname, "..", "..");
 
+// generate paste path string
+export const getPastePath = (word: string): string => {
+    return path.join(projectRoot, "data", word + ".txt");
+};
+
 export const errorHandler: ErrorRequestHandler = (err, _, res, __) => {
     logError(err);
 

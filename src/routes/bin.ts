@@ -1,11 +1,11 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { Pool, QueryResult } from "pg";
-import fs from "fs";
 import path from "path";
 import { Word } from "../utils/types";
 import fsp from "fs/promises";
-import { projectRoot } from "../utils";
-import { getAvailableWord, setWordTaken } from "../db/bin";
+import { getPastePath, projectRoot } from "../utils";
+import { getAvailableWord, getWordFromVal, setWordTaken } from "../db/bin";
+import { getPackedSettings } from "http2";
 
 export default function BinRouter(db: Pool) {
     const router: Router = Router();
@@ -33,6 +33,32 @@ export default function BinRouter(db: Pool) {
         }
 
         res.status(500).json({ message: "Something went wrong" });
+    });
+
+    router.get("/paste/:id", async (req: Request, res: Response) => {
+        const id: string = req.params.id;
+
+        if (id == undefined || id == "") {
+            return res.status(400).json({ message: "Invalid paste id!" });
+        }
+
+        // verify word
+        let word = await getWordFromVal(db, id);
+        if (word == undefined || !word.taken) {
+            return res.status(404).json({ message: "Paste not found!" });
+        }
+
+        // send paste
+        const paste = await fsp
+            .readFile(getPastePath(word.val), {
+                encoding: "utf-8",
+            })
+            .catch((err: Error) => {
+                throw err;
+            });
+
+        res.set("Content-type", "text/plain");
+        return res.status(200).send(paste);
     });
 
     return router;
