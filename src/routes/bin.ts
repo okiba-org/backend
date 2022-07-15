@@ -1,11 +1,10 @@
-import { Router, Request, Response, NextFunction } from "express";
-import { Pool, QueryResult } from "pg";
-import path from "path";
-import { Word } from "../utils/types";
+import { Request, Response, Router } from "express";
 import fsp from "fs/promises";
-import { getPastePath, projectRoot } from "../utils";
+import path from "path";
+import { Pool } from "pg";
 import { getAvailableWord, getWordFromVal, setWordTaken } from "../db/bin";
-import { getPackedSettings } from "http2";
+import { getPastePath, projectRoot } from "../utils";
+import { Word } from "../utils/types";
 
 export default function BinRouter(db: Pool) {
     const router: Router = Router();

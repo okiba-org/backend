@@ -4,6 +4,7 @@ import BinRouter from "./routes/bin";
 import { Client, Pool } from "pg";
 import { createDataDir, errorHandler, logError, logSuccess } from "./utils";
 import { tableExists, populateDB } from "./db";
+import cors from "cors";
 
 const main = async () => {
     dotenv.config();
@@ -33,7 +34,11 @@ const main = async () => {
     const app: Express = express();
     const port = process.env.PORT;
 
+    // FIX: other bodies panic
     app.use(express.text());
+
+    // check more on this later
+    app.use(cors());
 
     app.get("/", (req: Request, res: Response) => {
         res.send("Hello, World!");
