@@ -2,7 +2,7 @@ import express, { Response, Request, Express } from "express";
 import dotenv from "dotenv";
 import BinRouter from "./routes/bin";
 import { Client, Pool } from "pg";
-import { createDataDir, errorHandler, logError, logSuccess } from "./utils";
+import { createDataDir, errorHandler, logError, logInfo } from "./utils";
 import { tableExists, populateDB } from "./db";
 import cors from "cors";
 
@@ -12,15 +12,20 @@ const main = async () => {
 
     // init db
     const pool = new Pool();
-    const client = new Client();
+    const client = new Client({
+        user: process.env.PGUSER,
+        password: process.env.PGPASSWORD,
+        port: Number(process.env.PGPORT),
+        database: process.env.PGDATABASE,
+    });
 
     client
         .connect()
         .then(() => {
-            logSuccess("Connected to database!");
+            logInfo("Connected to database!");
         })
         .catch((err: Error) => {
-            logError(`Could not connect to database! \n\n${err.message}`);
+            logError(`Could not connect to database!\n${err.message}`);
             throw err;
         });
 
@@ -40,14 +45,14 @@ const main = async () => {
     // check more on this later
     app.use(cors());
 
-    app.get("/", (req: Request, res: Response) => {
+    app.get("/", (_: Request, res: Response) => {
         res.send("Hello, World!");
     });
     app.use("/bin/", BinRouter(pool));
 
     app.use(errorHandler);
     app.listen(port, () => {
-        logSuccess(`Server started on port ${port}`);
+        logInfo(`Server started on port ${port}`);
     });
 };
 

@@ -1,13 +1,12 @@
-import chalk from "chalk";
 import { ErrorRequestHandler } from "express";
 import path from "path";
 import fs from "fs";
 import fsp from "fs/promises";
 
 // logs
-export const logError = (msg: string) => console.error(chalk.bold.red(msg));
-export const logSuccess = (msg: string) => console.log(chalk.bold.green(msg));
-export const logWarning = (msg: string) => console.log(chalk.bold.yellow(msg));
+export const logInfo = (msg: any) => console.info(`\x1b[36m%s\x1b[0m`, `[INFO] ${msg}`);
+export const logError = (msg: any) => console.error(`\x1b[31m`, `[ERR] ${msg}`);
+export const logWarn = (msg: any) => console.warn(`\x1b[33m`, `[WARN] ${msg}`);
 
 export const projectRoot = path.join(__dirname, "..", "..");
 

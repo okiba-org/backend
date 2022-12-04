@@ -1,4 +1,4 @@
-import { logError, logSuccess, projectRoot } from "../utils";
+import { logError, logInfo, projectRoot } from "../utils";
 import fs from "fs";
 import path from "path";
 import { Client } from "pg";
@@ -65,5 +65,5 @@ export const populateDB = async (db: Client) => {
         await db.query(queryStr);
     }
 
-    logSuccess("Successfully populated the database!");
+    logInfo("Successfully populated the database!");
 };
