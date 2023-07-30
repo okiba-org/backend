@@ -57,9 +57,18 @@ pub async fn paste_id_exists(client: &Client, paste_id: &String) -> Result<bool,
 }
 
 pub async fn add_paste(client: &Client, endpoint: &String, content: String) -> Result<(), MyError> {
-    let insert_stmt_ = format!("INSERT INTO bin.pastes(paste_id, content) VALUES($1, $2)");
-    let insert_stmt = client.prepare(&insert_stmt_).await.unwrap();
+    let stmt_ = format!("INSERT INTO bin.pastes(paste_id, content) VALUES($1, $2)");
+    let stmt = client.prepare(&stmt_).await.unwrap();
 
-    client.query(&insert_stmt, &[&endpoint, &content]).await?;
+    client.query(&stmt, &[&endpoint, &content]).await?;
     Ok(())
+}
+
+pub async fn get_paste(client: &Client, endpoint: &String) -> Result<String, MyError> {
+    let stmt_ = format!("SELECT content FROM bin.pastes WHERE paste_id = $1");
+    let stmt = client.prepare(&stmt_).await.unwrap();
+
+    let content: String = client.query_one(&stmt, &[&endpoint]).await?.get(0);
+
+    Ok(content)
 }

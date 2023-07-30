@@ -2,7 +2,7 @@ mod cfg;
 mod db;
 use crate::db::errors::MyError;
 use actix_web::{
-    post,
+    get, post,
     web::{self},
     App, Error, HttpResponse, HttpServer,
 };
@@ -22,8 +22,24 @@ fn generate_endpoint(length: u8) -> String {
         .collect()
 }
 
+#[get("/paste/{paste_id}")]
+async fn fetch_paste(
+    db_pool: web::Data<Pool>,
+    paste_id: web::Path<String>,
+) -> Result<HttpResponse, Error> {
+    let client: Client = db_pool.get().await.map_err(MyError::PoolError)?;
+    if !db::paste_id_exists(&client, &paste_id).await? {
+        return Ok(HttpResponse::NotFound().json(json!({
+            "message": "paste with specified id does not exist"
+        })));
+    }
+
+    let content = db::get_paste(&client, &paste_id).await?;
+    Ok(HttpResponse::Ok().body(content))
+}
+
 #[post("/paste")]
-async fn paste(db_pool: web::Data<Pool>, body: String) -> Result<HttpResponse, Error> {
+async fn new_paste(db_pool: web::Data<Pool>, body: String) -> Result<HttpResponse, Error> {
     let client: Client = db_pool.get().await.map_err(MyError::PoolError)?;
 
     let mut endpoint = generate_endpoint(5);
@@ -56,7 +72,8 @@ async fn main() -> std::io::Result<()> {
     let server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
-            .service(paste)
+            .service(new_paste)
+            .service(fetch_paste)
     })
     .bind(ADDR)?
     .run();
