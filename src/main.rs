@@ -1,6 +1,10 @@
 mod cfg;
 mod db;
 use crate::db::errors::MyError;
+use actix_extensible_rate_limit::{
+    backend::{redis::RedisBackend, SimpleInputFunctionBuilder},
+    RateLimiter,
+};
 use actix_web::{
     get, post,
     web::{self},
@@ -10,8 +14,12 @@ use cfg::AppConfig;
 use deadpool_postgres::{Client, Pool};
 use dotenv::dotenv;
 use rand::{distributions::Alphanumeric, Rng};
+use redis::aio::ConnectionManager;
 use serde_json::json;
-use std::str::{self};
+use std::{
+    str::{self},
+    time::Duration,
+};
 use tokio_postgres::NoTls;
 
 fn generate_endpoint(length: u8) -> String {
@@ -69,9 +77,23 @@ async fn main() -> std::io::Result<()> {
     log::info!("Connecting database");
     let pool = config.pg.create_pool(None, NoTls).unwrap();
 
+    let redis_client =
+        redis::Client::open("redis://127.0.0.1:6379").expect("Couldn't connect to redis database");
+    let redis_cm = ConnectionManager::new(redis_client).await.unwrap();
+    let redis_backend = RedisBackend::builder(redis_cm).build();
+
     let server = HttpServer::new(move || {
+        // 5 requests per 60 seconds
+        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), 5)
+            .real_ip_key()
+            .build();
+        let middleware = RateLimiter::builder(redis_backend.clone(), input)
+            .add_headers()
+            .build();
+
         App::new()
             .app_data(web::Data::new(pool.clone()))
+            .wrap(middleware)
             .service(new_paste)
             .service(fetch_paste)
     })

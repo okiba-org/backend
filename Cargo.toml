@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+actix-extensible-rate-limit = { version = "0.2.1", features = ["redis"] }
 actix-web = "4"
 config = "0.13.3"
 deadpool-postgres = { version = "0.10.5", features = ["serde"] }
@@ -14,6 +15,7 @@ dotenv = "0.15.0"
 env_logger = "0.10.0"
 log = "0.4.19"
 rand = "0.8.5"
+redis = { version = "0.21.7",  default-features = false, features = ["aio", "tokio-comp", "connection-manager"]}
 serde = { version = "1.0.178", features = ["derive"] }
 serde_json = "1.0.104"
 tokio-pg-mapper = "0.2.0"
