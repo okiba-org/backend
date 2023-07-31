@@ -24,7 +24,6 @@ pub mod errors {
 
     #[derive(Display, From, Debug)]
     pub enum MyError {
-        NotFound,
         PGError(PGError),
         PGMError(PGMError),
         PoolError(PoolError),
@@ -33,16 +32,19 @@ pub mod errors {
 
     impl ResponseError for MyError {
         fn error_response(&self) -> HttpResponse {
-            match *self {
-                MyError::NotFound => HttpResponse::NotFound().json(json!({
-                    "message": "record not found"
-                })),
-                MyError::PoolError(ref err) => HttpResponse::InternalServerError().json(json!({
-                    "message": err.to_string()
-                })),
-                _ => HttpResponse::InternalServerError().json(json!({
-                    "message": "internal server error"
-                })),
+            match self {
+                MyError::PoolError(ref err) => {
+                    log::error!("{}", err.to_string());
+                    HttpResponse::InternalServerError().json(json!({
+                        "message": err.to_string()
+                    }))
+                }
+                error => {
+                    log::error!("{}", error.to_string());
+                    HttpResponse::InternalServerError().json(json!({
+                        "message": "internal server error"
+                    }))
+                }
             }
         }
     }

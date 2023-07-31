@@ -3,6 +3,6 @@ CREATE SCHEMA bin;
 
 CREATE TABLE bin.pastes (
     id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    paste_id VARCHAR(5) NOT NULL,
+    paste_id VARCHAR(6) NOT NULL,
     content TEXT NOT NULL
 )

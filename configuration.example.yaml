@@ -1,0 +1,19 @@
+server:
+    host: 0.0.0.0
+    port: 7070
+
+db:
+    user: "oggy"
+    password: "very_secure_password"
+    host: "127.0.0.1"
+    port: "5432"
+    dbname: "okiba"
+    pool:
+        max_size: 16
+
+app:
+    redis_uri: "redis://127.0.0.1"
+    rate_limit:
+        time_seconds: 60
+        request_count: 10
+    paste_id_length: 6

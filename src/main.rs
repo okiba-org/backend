@@ -10,16 +10,14 @@ use actix_web::{
     web::{self},
     App, Error, HttpResponse, HttpServer,
 };
-use cfg::AppConfig;
+use cfg::ApplicationConfig;
+use cfg::Config;
 use deadpool_postgres::{Client, Pool};
 use dotenv::dotenv;
 use rand::{distributions::Alphanumeric, Rng};
 use redis::aio::ConnectionManager;
 use serde_json::json;
-use std::{
-    str::{self},
-    time::Duration,
-};
+use std::time::Duration;
 use tokio_postgres::NoTls;
 
 fn generate_endpoint(length: u8) -> String {
@@ -47,14 +45,18 @@ async fn fetch_paste(
 }
 
 #[post("/paste")]
-async fn new_paste(db_pool: web::Data<Pool>, body: String) -> Result<HttpResponse, Error> {
+async fn new_paste(
+    db_pool: web::Data<Pool>,
+    app_config: web::Data<ApplicationConfig>,
+    body: String,
+) -> Result<HttpResponse, Error> {
     let client: Client = db_pool.get().await.map_err(MyError::PoolError)?;
 
-    let mut endpoint = generate_endpoint(5);
+    let mut endpoint = generate_endpoint(app_config.paste_id_length);
     // check if endpoint already exists
     loop {
         if db::paste_id_exists(&client, &endpoint).await? {
-            endpoint = generate_endpoint(5)
+            endpoint = generate_endpoint(app_config.paste_id_length)
         } else {
             break;
         }
@@ -70,37 +72,43 @@ async fn new_paste(db_pool: web::Data<Pool>, body: String) -> Result<HttpRespons
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    const ADDR: (&str, u16) = ("127.0.0.1", 8080);
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    let config = AppConfig::from_env().unwrap();
+    let config = Config::from_env().unwrap();
     log::info!("Connecting database");
-    let pool = config.pg.create_pool(None, NoTls).unwrap();
+    let pool = config.db.create_pool(None, NoTls).unwrap();
 
-    let redis_client =
-        redis::Client::open("redis://127.0.0.1:6379").expect("Couldn't connect to redis database");
+    let redis_client = redis::Client::open(config.app.redis_uri.clone())
+        .expect("Couldn't connect to redis database");
     let redis_cm = ConnectionManager::new(redis_client).await.unwrap();
     let redis_backend = RedisBackend::builder(redis_cm).build();
 
     let server = HttpServer::new(move || {
-        // 5 requests per 60 seconds
-        let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), 5)
-            .real_ip_key()
-            .build();
+        let input = SimpleInputFunctionBuilder::new(
+            Duration::from_secs(config.app.rate_limit.time_seconds),
+            config.app.rate_limit.request_count,
+        )
+        .real_ip_key()
+        .build();
         let middleware = RateLimiter::builder(redis_backend.clone(), input)
             .add_headers()
             .build();
 
         App::new()
             .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(config.app.clone()))
             .wrap(middleware)
             .service(new_paste)
             .service(fetch_paste)
     })
-    .bind(ADDR)?
+    .bind((&*config.server.host, config.server.port))?
     .run();
 
-    log::info!("Starting the server at http://{}:{}", ADDR.0, ADDR.1);
+    log::info!(
+        "Starting the server at http://{}:{}",
+        config.server.host,
+        config.server.port
+    );
 
     server.await
 }
